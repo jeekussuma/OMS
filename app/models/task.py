@@ -26,8 +26,8 @@ class Task(Base):
     priority = Column(Enum(TaskPriority), default=TaskPriority.MEDIUM)
     due_date = Column(DateTime, nullable=True)
     department_id = Column(Integer, ForeignKey("departments.id"))
-    assigned_to_id = Column(Integer, ForeignKey("users.id"))
-    created_by_id = Column(Integer, ForeignKey("users.id"))
+    assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

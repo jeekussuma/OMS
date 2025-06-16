@@ -33,7 +33,10 @@ def create_task(
                 detail="Assigned user not found"
             )
     
-    db_task = Task(**task.dict())
+    # Create task with created_by_id
+    task_data = task.dict()
+    task_data["created_by_id"] = current_user.id
+    db_task = Task(**task_data)
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
@@ -52,6 +55,7 @@ def read_tasks(
 ):
     query = db.query(Task)
     
+    # Add filters
     if status:
         query = query.filter(Task.status == status)
     if priority:
@@ -61,7 +65,18 @@ def read_tasks(
     if assigned_to_id:
         query = query.filter(Task.assigned_to_id == assigned_to_id)
     
+    # Ensure created_by_id is not None
+    query = query.filter(Task.created_by_id.isnot(None))
+    
+    # Get tasks
     tasks = query.offset(skip).limit(limit).all()
+    
+    # Verify all tasks have created_by_id
+    for task in tasks:
+        if task.created_by_id is None:
+            task.created_by_id = current_user.id
+            db.commit()
+    
     return tasks
 
 @router.get("/{task_id}", response_model=TaskResponse)
