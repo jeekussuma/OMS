@@ -189,7 +189,7 @@ The system is designed to meet production-grade and international standards:
   - Containerized deployment with Docker.
 - **Maintainability**:
   - Modular architecture with clear separation of concerns.
-  - Auto-generated API documentation via FastAPI’s Swagger UI.
+  - Auto-generated API documentation via FastAPI's Swagger UI.
   - Detailed logging with ELK Stack.
 
 ## Development Roadmap
@@ -234,3 +234,150 @@ This project is licensed under the MIT License.
 
 ## Contact
 For questions or support, contact the development team at [kusumacd9@gmail.com].
+
+## Deployment Instructions
+
+### 1. Database Deployment
+
+1. **Start the Database**:
+   ```bash
+   # Create and start the database container
+   docker-compose -f docker-compose.db.yml up -d
+   
+   # Check database status
+   docker-compose -f docker-compose.db.yml ps
+   
+   # View database logs
+   docker-compose -f docker-compose.db.yml logs -f
+   ```
+
+2. **Database Management**:
+   ```bash
+   # Stop the database
+   docker-compose -f docker-compose.db.yml down
+   
+   # Stop and remove volumes (WARNING: This will delete all data)
+   docker-compose -f docker-compose.db.yml down -v
+   
+   # Restart the database
+   docker-compose -f docker-compose.db.yml restart
+   ```
+
+### 2. Application Deployment
+
+1. **Start the Application**:
+   ```bash
+   # Build and start the application container
+   docker-compose -f docker-compose.app.yml up --build
+   
+   # Or run in background
+   docker-compose -f docker-compose.app.yml up -d
+   
+   # Check application status
+   docker-compose -f docker-compose.app.yml ps
+   
+   # View application logs
+   docker-compose -f docker-compose.app.yml logs -f
+   ```
+
+2. **Application Management**:
+   ```bash
+   # Stop the application
+   docker-compose -f docker-compose.app.yml down
+   
+   # Restart the application
+   docker-compose -f docker-compose.app.yml restart
+   
+   # Rebuild and restart the application
+   docker-compose -f docker-compose.app.yml up --build -d
+   ```
+
+### 3. Combined Deployment
+
+If you want to deploy both services together:
+
+```bash
+# Start both services
+docker-compose -f docker-compose.db.yml -f docker-compose.app.yml up -d
+
+# Stop both services
+docker-compose -f docker-compose.db.yml -f docker-compose.app.yml down
+
+# View logs for both services
+docker-compose -f docker-compose.db.yml -f docker-compose.app.yml logs -f
+```
+
+### 4. Environment Configuration
+
+1. **Database Environment**:
+   - Configure database settings in `docker-compose.db.yml`:
+     ```yaml
+     environment:
+       - POSTGRES_USER=postgres
+       - POSTGRES_PASSWORD=postgres
+       - POSTGRES_DB=org_management
+     ```
+
+2. **Application Environment**:
+   - Configure application settings in `docker-compose.app.yml`:
+     ```yaml
+     environment:
+       - DATABASE_URL=postgresql://postgres:postgres@db:5432/org_management
+       - SECRET_KEY=your-secret-key-here
+       - ALGORITHM=HS256
+       - ACCESS_TOKEN_EXPIRE_MINUTES=30
+     ```
+
+### 5. Access Points
+
+- **Application**:
+  - API Documentation: http://localhost:8000/docs
+  - API Base URL: http://localhost:8000/api/v1
+
+- **Database**:
+  - Host: localhost
+  - Port: 5432
+  - Database: org_management
+  - Username: postgres
+  - Password: postgres
+
+### 6. Default Superuser
+
+After deployment, the system will create a default superuser:
+- Email: admin@example.com
+- Password: admin123
+
+### 7. Troubleshooting
+
+1. **Database Issues**:
+   ```bash
+   # Check database container status
+   docker-compose -f docker-compose.db.yml ps
+   
+   # Check database logs
+   docker-compose -f docker-compose.db.yml logs db
+   
+   # Check database health
+   docker-compose -f docker-compose.db.yml exec db pg_isready -U postgres
+   ```
+
+2. **Application Issues**:
+   ```bash
+   # Check application container status
+   docker-compose -f docker-compose.app.yml ps
+   
+   # Check application logs
+   docker-compose -f docker-compose.app.yml logs web
+   
+   # Access application container shell
+   docker-compose -f docker-compose.app.yml exec web bash
+   ```
+
+3. **Network Issues**:
+   ```bash
+   # Check network status
+   docker network ls
+   
+   # Inspect network
+   docker network inspect app-network
+   ```
