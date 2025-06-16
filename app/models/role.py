@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, Table, ForeignKey
+from sqlalchemy import Column, Integer, String, Table, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from ..core.database import Base
+from datetime import datetime
 
 # Association tables
 user_roles = Table(
@@ -23,6 +25,8 @@ class Role(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     description = Column(String)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     users = relationship("User", secondary=user_roles, back_populates="roles")
@@ -32,10 +36,12 @@ class Permission(Base):
     __tablename__ = "permissions"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)
     description = Column(String)
-    resource = Column(String)  # e.g., "user", "task", "department"
-    action = Column(String)    # e.g., "create", "read", "update", "delete"
+    resource = Column(String, nullable=False)  # e.g., "user", "task", "department"
+    action = Column(String, nullable=False)    # e.g., "create", "read", "update", "delete"
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     roles = relationship("Role", secondary=role_permissions, back_populates="permissions") 

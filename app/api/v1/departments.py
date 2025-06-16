@@ -5,11 +5,17 @@ from app.core.database import get_db
 from app.models.department import Department
 from app.schemas.department import DepartmentCreate, DepartmentUpdate, DepartmentResponse, DepartmentHierarchy
 from datetime import datetime
+from app.core.dependencies import get_current_active_user
+from app.models.user import User
 
 router = APIRouter()
 
 @router.post("/", response_model=DepartmentResponse)
-def create_department(department: DepartmentCreate, db: Session = Depends(get_db)):
+def create_department(
+    department: DepartmentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     # If parent_id is provided, verify it exists
     if department.parent_id:
         parent = db.query(Department).filter(Department.id == department.parent_id).first()
@@ -55,7 +61,8 @@ def read_departments(
     skip: int = 0,
     limit: int = 100,
     parent_id: Optional[int] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     query = db.query(Department)
     
@@ -96,7 +103,11 @@ def get_department_hierarchy(db: Session = Depends(get_db)):
     return [build_hierarchy(dept) for dept in root_departments]
 
 @router.get("/{department_id}", response_model=DepartmentResponse)
-def read_department(department_id: int, db: Session = Depends(get_db)):
+def read_department(
+    department_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     db_department = db.query(Department).filter(Department.id == department_id).first()
     if db_department is None:
         raise HTTPException(
@@ -113,7 +124,12 @@ def read_department(department_id: int, db: Session = Depends(get_db)):
     )
 
 @router.put("/{department_id}", response_model=DepartmentResponse)
-def update_department(department_id: int, department: DepartmentUpdate, db: Session = Depends(get_db)):
+def update_department(
+    department_id: int,
+    department: DepartmentUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     db_department = db.query(Department).filter(Department.id == department_id).first()
     if db_department is None:
         raise HTTPException(
@@ -176,7 +192,11 @@ def update_department(department_id: int, department: DepartmentUpdate, db: Sess
     )
 
 @router.delete("/{department_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_department(department_id: int, db: Session = Depends(get_db)):
+def delete_department(
+    department_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     db_department = db.query(Department).filter(Department.id == department_id).first()
     if db_department is None:
         raise HTTPException(
