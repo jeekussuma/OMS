@@ -233,4 +233,4 @@ Contributions are welcome! Please follow these steps:
 This project is licensed under the MIT License.
 
 ## Contact
-For questions or support, contact the development team at [your-email@example.com].
+For questions or support, contact the development team at [kusumacd9@gmail.com].

@@ -8,11 +8,17 @@ from app.models.department import Department
 from app.schemas.user import UserCreate, UserUpdate, UserResponse, Token
 from datetime import timedelta
 from app.core.config import settings
+from app.core.dependencies import get_current_active_user, get_current_superuser
+from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter()
 
 @router.post("/", response_model=UserResponse)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
+def create_user(
+    user: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_superuser)
+):
     # Check if email already exists
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
@@ -54,12 +60,21 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 @router.get("/", response_model=List[UserResponse])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     users = db.query(User).offset(skip).limit(limit).all()
     return users
 
 @router.get("/{user_id}", response_model=UserResponse)
-def read_user(user_id: int, db: Session = Depends(get_db)):
+def read_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     db_user = db.query(User).filter(User.id == user_id).first()
     if db_user is None:
         raise HTTPException(
@@ -69,7 +84,12 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 @router.put("/{user_id}", response_model=UserResponse)
-def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db)):
+def update_user(
+    user_id: int,
+    user: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     db_user = db.query(User).filter(User.id == user_id).first()
     if db_user is None:
         raise HTTPException(
@@ -98,7 +118,11 @@ def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db)):
     return db_user
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user_id: int, db: Session = Depends(get_db)):
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_superuser)
+):
     db_user = db.query(User).filter(User.id == user_id).first()
     if db_user is None:
         raise HTTPException(
@@ -111,9 +135,12 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     return None
 
 @router.post("/login", response_model=Token)
-def login(email: str, password: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == email).first()
-    if not user or not verify_password(password, user.hashed_password):
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.email == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",

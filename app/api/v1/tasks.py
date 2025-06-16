@@ -6,11 +6,16 @@ from app.models.task import Task, TaskStatus, TaskPriority
 from app.models.department import Department
 from app.models.user import User
 from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse
+from app.core.dependencies import get_current_active_user
 
 router = APIRouter()
 
 @router.post("/", response_model=TaskResponse)
-def create_task(task: TaskCreate, db: Session = Depends(get_db)):
+def create_task(
+    task: TaskCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     # Verify department exists
     department = db.query(Department).filter(Department.id == task.department_id).first()
     if not department:
@@ -42,7 +47,8 @@ def read_tasks(
     priority: Optional[TaskPriority] = None,
     department_id: Optional[int] = None,
     assigned_to_id: Optional[int] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     query = db.query(Task)
     
@@ -59,7 +65,11 @@ def read_tasks(
     return tasks
 
 @router.get("/{task_id}", response_model=TaskResponse)
-def read_task(task_id: int, db: Session = Depends(get_db)):
+def read_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if db_task is None:
         raise HTTPException(
@@ -69,7 +79,12 @@ def read_task(task_id: int, db: Session = Depends(get_db)):
     return db_task
 
 @router.put("/{task_id}", response_model=TaskResponse)
-def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
+def update_task(
+    task_id: int,
+    task: TaskUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if db_task is None:
         raise HTTPException(
@@ -104,7 +119,11 @@ def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
     return db_task
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_task(task_id: int, db: Session = Depends(get_db)):
+def delete_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if db_task is None:
         raise HTTPException(

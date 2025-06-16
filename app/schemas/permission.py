@@ -20,7 +20,10 @@ class PermissionUpdate(BaseModel):
 class PermissionResponse(PermissionBase):
     id: int
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat() if v else None
+        } 
