@@ -7,6 +7,7 @@ from app.models.user import User
 from app.schemas.role import RoleCreate, RoleUpdate, RoleResponse
 from app.core.dependencies import get_current_active_user, get_current_superuser
 from sqlalchemy.exc import IntegrityError
+from app.models.permission import Permission
 
 router = APIRouter()
 
@@ -68,8 +69,15 @@ def update_role(
         )
     
     update_data = role.dict(exclude_unset=True)
+    # Assign permissions if permission_ids provided
+    if "permission_ids" in update_data and update_data["permission_ids"] is not None:
+        permissions = db.query(Permission).filter(Permission.id.in_(update_data["permission_ids"])).all()
+        if len(permissions) != len(update_data["permission_ids"]):
+            raise HTTPException(status_code=404, detail="One or more permissions not found")
+        db_role.permissions = permissions
     for field, value in update_data.items():
-        setattr(db_role, field, value)
+        if field != "permission_ids":
+            setattr(db_role, field, value)
     
     db.commit()
     db.refresh(db_role)
