@@ -3,8 +3,9 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..core.database import Base
 from datetime import datetime
+from .permission import role_permissions # Import the association table
 
-# Association tables
+# Association table for User and Role
 user_roles = Table(
     "user_roles",
     Base.metadata,
@@ -12,36 +13,36 @@ user_roles = Table(
     Column("role_id", Integer, ForeignKey("roles.id")),
 )
 
-role_permissions = Table(
-    "role_permissions",
-    Base.metadata,
-    Column("role_id", Integer, ForeignKey("roles.id")),
-    Column("permission_id", Integer, ForeignKey("permissions.id")),
-)
+# The role_permissions table is now defined in app/models/permission.py
+# and imported on line 6.
 
 class Role(Base):
     __tablename__ = "roles"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    description = Column(String)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Relationships
-    users = relationship("User", secondary=user_roles, back_populates="roles")
-    permissions = relationship("Permission", secondary=role_permissions, back_populates="roles")
-
-class Permission(Base):
-    __tablename__ = "permissions"
-
-    id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
     description = Column(String)
-    resource = Column(String, nullable=False)  # e.g., "user", "task", "department"
-    action = Column(String, nullable=False)    # e.g., "create", "read", "update", "delete"
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
-    roles = relationship("Role", secondary=role_permissions, back_populates="permissions") 
+    users = relationship("User", secondary="user_roles", back_populates="roles")
+    permissions = relationship(
+        "Permission",
+        secondary=role_permissions,
+        back_populates="roles"
+    )
+
+# The Permission model is now defined in app/models/permission.py
+# class Permission(Base):
+#    __tablename__ = "permissions"
+#
+#    id = Column(Integer, primary_key=True, index=True)
+#    name = Column(String, unique=True, index=True)
+#    description = Column(String)
+#    resource = Column(String)
+#    action = Column(String)
+#    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+#    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+#
+#    roles = relationship("Role", secondary=role_permissions, back_populates="permissions") 

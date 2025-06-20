@@ -5,6 +5,7 @@ from app.core.database import get_db
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.models.user import User
 from app.models.department import Department
+from app.models.role import Role
 from app.schemas.user import UserCreate, UserUpdate, UserResponse, Token
 from datetime import timedelta
 from app.core.config import settings
@@ -44,6 +45,14 @@ def create_user(
                 detail=f"Department with id {user.department_id} not found"
             )
     
+    if user.role_ids:
+        roles = db.query(Role).filter(Role.id.in_(user.role_ids)).all()
+        if len(roles) != len(user.role_ids):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="One or more roles not found",
+            )
+    
     hashed_password = get_password_hash(user.password)
     db_user = User(
         email=user.email,
@@ -54,6 +63,10 @@ def create_user(
         is_active=True,
         is_superuser=False
     )
+    
+    if user.role_ids:
+        db_user.roles = roles
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -68,6 +81,13 @@ def read_users(
 ):
     users = db.query(User).offset(skip).limit(limit).all()
     return users
+
+@router.get("/me", response_model=UserResponse)
+def read_users_me(current_user: User = Depends(get_current_active_user)):
+    """
+    Get current user.
+    """
+    return current_user
 
 @router.get("/{user_id}", response_model=UserResponse)
 def read_user(
@@ -86,7 +106,7 @@ def read_user(
 @router.put("/{user_id}", response_model=UserResponse)
 def update_user(
     user_id: int,
-    user: UserUpdate,
+    user_in: UserUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -98,18 +118,27 @@ def update_user(
         )
     
     # Validate department_id if being updated
-    if user.department_id is not None:
-        department = db.query(Department).filter(Department.id == user.department_id).first()
+    if user_in.department_id is not None:
+        department = db.query(Department).filter(Department.id == user_in.department_id).first()
         if not department:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Department with id {user.department_id} not found"
+                detail=f"Department with id {user_in.department_id} not found"
             )
     
-    update_data = user.dict(exclude_unset=True)
+    update_data = user_in.dict(exclude_unset=True)
     if "password" in update_data:
         update_data["hashed_password"] = get_password_hash(update_data.pop("password"))
     
+    if user_in.role_ids is not None:
+        roles = db.query(Role).filter(Role.id.in_(user_in.role_ids)).all()
+        if len(roles) != len(user_in.role_ids):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="One or more roles not found",
+            )
+        db_user.roles = roles
+
     for field, value in update_data.items():
         setattr(db_user, field, value)
     

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime
+from .role import RoleResponse
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -18,6 +19,7 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     department_id: Optional[int] = None
     is_active: Optional[bool] = None
+    role_ids: Optional[List[int]] = None
 
 class UserResponse(UserBase):
     id: int
@@ -25,6 +27,7 @@ class UserResponse(UserBase):
     is_superuser: bool
     created_at: datetime
     updated_at: datetime
+    roles: List[RoleResponse] = []
 
     class Config:
         from_attributes = True

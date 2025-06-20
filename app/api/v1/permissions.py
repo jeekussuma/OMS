@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
-from app.models.role import Permission
+from app.models.permission import Permission
 from app.models.user import User
 from app.schemas.permission import PermissionCreate, PermissionUpdate, PermissionResponse
 from app.core.dependencies import get_current_active_user, get_current_superuser
