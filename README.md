@@ -154,23 +154,127 @@ pytest tests/
 ```
 
 ## API Endpoints
-The system exposes RESTful APIs under `/api/v1`. Key endpoints include:
-- **Users**:
-  - `POST /api/v1/users/register`: Register a new user.
-  - `POST /api/v1/users/login`: Authenticate and return JWT.
-  - `GET /api/v1/users/{id}`: Get user details.
-- **Roles**:
-  - `POST /api/v1/roles`: Create a role.
-  - `GET /api/v1/roles`: List all roles.
-- **Permissions**:
-  - `POST /api/v1/permissions`: Create a permission.
-  - `GET /api/v1/permissions`: List permissions.
-- **Tasks**:
-  - `POST /api/v1/tasks`: Create a task.
-  - `GET /api/v1/tasks`: List tasks (filtered by role/department).
-- **Departments**:
-  - `POST /api/v1/departments`: Create a department/sub-department.
-  - `GET /api/v1/departments`: List departments (hierarchical).
+
+### Authentication (Central Auth System)
+- `POST /api/v1/users/login` - Login user and get JWT token
+- `POST /api/v1/users/verify-token` - Verify JWT token (send token in body)
+- `GET /api/v1/users/verify-token` - Verify JWT token (send token in Authorization header)
+- `POST /api/v1/users/refresh-token` - Refresh JWT token
+- `POST /api/v1/users/logout` - Logout user (token invalidation)
+- `GET /api/v1/users/me` - Get current user information
+
+### Users
+- `GET /api/v1/users/` - List users
+- `POST /api/v1/users/` - Create user
+- `GET /api/v1/users/{id}` - Get user
+- `PUT /api/v1/users/{id}` - Update user (including role assignment)
+- `DELETE /api/v1/users/{id}` - Delete user
+
+### Roles
+- `GET /api/v1/roles/` - List roles
+- `POST /api/v1/roles/` - Create role
+- `GET /api/v1/roles/{id}` - Get role
+- `PUT /api/v1/roles/{id}` - Update role (including permission assignment)
+- `DELETE /api/v1/roles/{id}` - Delete role
+
+### Permissions
+- `GET /api/v1/permissions/` - List permissions
+- `POST /api/v1/permissions/` - Create permission
+- `GET /api/v1/permissions/{id}` - Get permission
+- `PUT /api/v1/permissions/{id}` - Update permission
+- `DELETE /api/v1/permissions/{id}` - Delete permission
+
+### Departments
+- `GET /api/v1/departments/` - List departments
+- `POST /api/v1/departments/` - Create department
+- `GET /api/v1/departments/{id}` - Get department
+- `PUT /api/v1/departments/{id}` - Update department
+- `DELETE /api/v1/departments/{id}` - Delete department
+
+### Tasks
+- `GET /api/v1/tasks/` - List tasks
+- `POST /api/v1/tasks/` - Create task
+- `GET /api/v1/tasks/{id}` - Get task
+- `PUT /api/v1/tasks/{id}` - Update task
+- `DELETE /api/v1/tasks/{id}` - Delete task
+
+## Central Authentication System Usage
+
+### 1. Login
+```bash
+POST /api/v1/users/login
+Content-Type: application/x-www-form-urlencoded
+
+username=user@example.com&password=password123
+```
+
+Response:
+```json
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "token_type": "bearer"
+}
+```
+
+### 2. Verify Token (Method 1 - Body)
+```bash
+POST /api/v1/users/verify-token
+Content-Type: application/json
+
+{
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+### 3. Verify Token (Method 2 - Header)
+```bash
+GET /api/v1/users/verify-token
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+```
+
+### 4. Refresh Token
+```bash
+POST /api/v1/users/refresh-token
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+```
+
+### 5. Logout
+```bash
+POST /api/v1/users/logout
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+```
+
+### 6. Get Current User
+```bash
+GET /api/v1/users/me
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+```
+
+## Role and Permission Assignment
+
+### Assign Permissions to Role
+```bash
+PUT /api/v1/roles/1
+Authorization: Bearer <superadmin_token>
+Content-Type: application/json
+
+{
+  "name": "Manager",
+  "description": "Department Manager",
+  "permission_ids": [1, 2, 3, 4]
+}
+```
+
+### Assign Roles to User
+```bash
+PUT /api/v1/users/5
+Authorization: Bearer <superadmin_token>
+Content-Type: application/json
+
+{
+  "role_ids": [1, 2]
+}
+```
 
 ## Production Standards & Compliance
 The system is designed to meet production-grade and international standards:
