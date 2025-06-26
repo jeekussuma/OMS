@@ -485,3 +485,7 @@ After deployment, the system will create a default superuser:
    # Inspect network
    docker network inspect app-network
    ```
+
+   #running development on windows
+   .\venv\Scripts\activate
+   uvicorn main:app --reload --port 5553 

@@ -24,10 +24,21 @@ def create_role(
             detail="Role name already exists"
         )
     
-    db_role = Role(**role.dict())
+    # Exclude permission_ids when creating Role
+    role_data = role.dict(exclude={"permission_ids"})
+    db_role = Role(**role_data)
     db.add(db_role)
     db.commit()
     db.refresh(db_role)
+
+    # Assign permissions if provided
+    if role.permission_ids:
+        permissions = db.query(Permission).filter(Permission.id.in_(role.permission_ids)).all()
+        if len(permissions) != len(role.permission_ids):
+            raise HTTPException(status_code=404, detail="One or more permissions not found")
+        db_role.permissions = permissions
+        db.commit()
+        db.refresh(db_role)
     return db_role
 
 @router.get("/", response_model=List[RoleResponse])
