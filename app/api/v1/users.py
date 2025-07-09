@@ -1,17 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 from app.core.database import get_db
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.models.user import User
 from app.models.department import Department
-from app.schemas.user import UserCreate, UserUpdate, UserResponse, Token
+from app.models.role import Role
+from app.schemas.user import UserCreate, UserUpdate, UserResponse, Token, TokenData
 from datetime import timedelta
 from app.core.config import settings
-from app.core.dependencies import get_current_active_user, get_current_superuser
+from app.core.dependencies import get_current_active_user, get_current_superuser, get_current_user
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
+from jose import jwt, JWTError
 
 router = APIRouter()
+
+class TokenVerify(BaseModel):
+    token: str
 
 @router.post("/", response_model=UserResponse)
 def create_user(
@@ -151,4 +157,91 @@ def login(
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"} 
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/verify-token", response_model=UserResponse)
+def verify_token(
+    token_verify: TokenVerify,
+    db: Session = Depends(get_db)
+):
+    """
+    Verify JWT token and return user information.
+    This endpoint is useful for central authentication systems.
+    """
+    try:
+        # Decode the JWT token
+        payload = jwt.decode(token_verify.token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+    
+    # Get user with roles and permissions
+    user = db.query(User).options(
+        joinedload(User.roles).joinedload(Role.permissions)
+    ).filter(User.email == email).first()
+    
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Inactive user"
+        )
+    
+    return user
+
+@router.get("/verify-token", response_model=UserResponse)
+def verify_token_header(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Verify JWT token from Authorization header and return user information.
+    This endpoint is useful for central authentication systems.
+    """
+    return current_user
+
+@router.post("/refresh-token", response_model=Token)
+def refresh_token(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Refresh JWT token and return new access token.
+    This endpoint is useful for central authentication systems.
+    """
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": current_user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Logout user (token invalidation).
+    In a production system, you might want to add the token to a blacklist.
+    This endpoint is useful for central authentication systems.
+    """
+    # In a production system, you would typically:
+    # 1. Add the token to a blacklist (Redis/database)
+    # 2. Set token expiration time
+    # 3. Return success message
+    
+    return {
+        "message": "Successfully logged out",
+        "user_id": current_user.id,
+        "email": current_user.email
+    } 
