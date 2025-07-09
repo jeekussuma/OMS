@@ -18,8 +18,7 @@ router = APIRouter()
 def read_platforms(
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    db: Session = Depends(get_db)
 ):
     roles = db.query(Platform).offset(skip).limit(limit).all()
     return roles

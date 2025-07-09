@@ -19,7 +19,6 @@ def read_categories(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
 ):
     roles = db.query(Category).offset(skip).limit(limit).all()
     return roles
