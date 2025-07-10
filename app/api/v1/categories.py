@@ -22,3 +22,16 @@ def read_categories(
 ):
     roles = db.query(Category).offset(skip).limit(limit).all()
     return roles
+
+@router.get("/{category_id}", response_model=CategoryResponse)
+def read_category(
+    category_id: str,
+    db: Session = Depends(get_db),
+):
+    db_category = db.query(Category).filter(Category.id == category_id).first()
+    if db_category is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return db_category

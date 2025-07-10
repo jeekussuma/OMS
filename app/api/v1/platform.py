@@ -22,3 +22,16 @@ def read_platforms(
 ):
     roles = db.query(Platform).offset(skip).limit(limit).all()
     return roles
+
+@router.get("/{platform_id}", response_model=PlatformResponse)
+def read_platform(
+    platform_id: str,
+    db: Session = Depends(get_db),
+):
+    db_platform = db.query(Platform).filter(Platform.id == platform_id).first()
+    if db_platform is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return db_platform
