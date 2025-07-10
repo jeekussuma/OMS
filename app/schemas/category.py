@@ -8,5 +8,3 @@ class CategoryBase(BaseModel):
     
 class CategoryResponse(CategoryBase):
     id: str
-    created_at: datetime
-    updated_at: Optional[datetime] = None

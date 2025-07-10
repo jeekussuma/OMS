@@ -29,8 +29,8 @@ app.include_router(roles.router, prefix=f"{settings.API_V1_STR}/roles", tags=["r
 app.include_router(permissions.router, prefix=f"{settings.API_V1_STR}/permissions", tags=["permissions"])
 app.include_router(departments.router, prefix=f"{settings.API_V1_STR}/departments", tags=["departments"])
 app.include_router(tasks.router, prefix=f"{settings.API_V1_STR}/tasks", tags=["tasks"])
-app.include_router(categories.router, prefix=f"{settings.API_V1_STR}/categories", tags=["categories"])
-app.include_router(platform.router, prefix=f"{settings.API_V1_STR}/platforms", tags=["platforms"])
+app.include_router(categories.router, prefix=f"{settings.API_V1_STR}/public/categories", tags=["categories"])
+app.include_router(platform.router, prefix=f"{settings.API_V1_STR}/public/platforms", tags=["platforms"])
 
 @app.get("/")
 async def root():
