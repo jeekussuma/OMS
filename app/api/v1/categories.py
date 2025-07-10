@@ -32,6 +32,6 @@ def read_category(
     if db_category is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            detail="Category not found"
         )
     return db_category

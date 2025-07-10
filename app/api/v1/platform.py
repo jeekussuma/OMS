@@ -32,6 +32,6 @@ def read_platform(
     if db_platform is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            detail="Platform not found"
         )
     return db_platform
